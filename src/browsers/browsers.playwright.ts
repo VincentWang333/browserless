@@ -222,6 +222,26 @@ class BasePlaywright extends EventEmitter {
 
 export class ChromiumPlaywright extends BasePlaywright {
   protected playwrightBrowserType = PlaywrightBrowserTypes.chromium;
+
+  // ========== [CUSTOMIZED START] ==========
+  // Purpose: Custom constructor to support custom Chromium executable path
+  // Date: 2025-11-01
+  // ========== [CUSTOMIZED] ==========
+  constructor(opts: {
+    config: Config;
+    logger: Logger;
+    userDataDir: BasePlaywright['userDataDir'];
+  }) {
+    super(opts);
+
+    // Use custom chromium path if configured, otherwise use default
+    const customPath = opts.config.getCustomChromiumPath();
+    if (customPath) {
+      this.executablePath = () => customPath;
+      this.logger.info(`Using custom Chromium path: ${customPath}`);
+    }
+  }
+  // ========== [CUSTOMIZED END] ==========
 }
 
 export class ChromePlaywright extends ChromiumPlaywright {

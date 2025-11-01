@@ -275,7 +275,7 @@ export class Browserless extends EventEmitter {
     ];
 
     const [[internalHttpRouteFiles, internalWsRouteFiles], installedBrowsers] =
-      await Promise.all([getRouteFiles(this.config), availableBrowsers]);
+      await Promise.all([getRouteFiles(this.config), availableBrowsers(this.config)]); // [CUSTOMIZED] Pass config to availableBrowsers
 
     const hasDebugger = await this.config.hasDebugger();
     const debuggerURL =
@@ -382,31 +382,40 @@ export class Browserless extends EventEmitter {
       }
     }
 
+    // ========== [CUSTOMIZED START] ==========
+    // Purpose: Downgrade missing browser errors to warnings and filter unavailable routes
+    // Date: 2025-11-01
+    // Changed from: throw Error to logger.warn, allowing service to continue
+    // ========== [CUSTOMIZED] ==========
+    // Filter routes based on browser availability
+    const filterByBrowserAvailability = <T extends HTTPRoute | BrowserHTTPRoute | WebSocketRoute | BrowserWebsocketRoute>(route: T): boolean => {
+      if (
+        'browser' in route &&
+        route.browser &&
+        internalBrowsers.includes(route.browser) &&
+        !installedBrowsers.some((b) => b.name === route.browser?.name)
+      ) {
+        this.logger.warn(
+          dedent(`Skipping route "${route.path}" due to missing browser binary for "${route.browser?.name}".
+          Installed Browsers: ${installedBrowsers.map((b) => b.name).join(', ')}`),
+        );
+        return false;
+      }
+      return true;
+    };
+
     const allRoutes: [
       (HTTPRoute | BrowserHTTPRoute)[],
       (WebSocketRoute | BrowserWebsocketRoute)[],
     ] = [
-      [...httpRoutes].filter((r) => this.filterNonMacArm64Browsers(r)),
-      [...wsRoutes].filter((r) => this.filterNonMacArm64Browsers(r)),
+      [...httpRoutes].filter((r) => this.filterNonMacArm64Browsers(r)).filter(filterByBrowserAvailability),
+      [...wsRoutes].filter((r) => this.filterNonMacArm64Browsers(r)).filter(filterByBrowserAvailability),
     ];
+    // ========== [CUSTOMIZED END] ==========
 
-    // Validate that we have the browsers they are asking for
+    // Validate for duplicate route names
     allRoutes
       .flat()
-      .map((route) => {
-        if (
-          'browser' in route &&
-          route.browser &&
-          internalBrowsers.includes(route.browser) &&
-          !installedBrowsers.some((b) => b.name === route.browser?.name)
-        ) {
-          throw new Error(
-            dedent(`Couldn't load route "${route.path}" due to missing browser binary for "${route.browser?.name}".
-            Installed Browsers: ${installedBrowsers.map((b) => b.name).join(', ')}`),
-          );
-        }
-        return route;
-      })
       .filter((e, i, a) => a.findIndex((r) => r.name === e.name) !== i)
       .map((r) => r.name)
       .forEach((name) => {

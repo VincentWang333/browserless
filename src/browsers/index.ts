@@ -86,7 +86,7 @@ export class BrowserManager {
    * When both Chrome and Chromium are installed, defaults to Chromium.
    */
   public async getProtocolJSON(logger: Logger): Promise<object> {
-    const Browser = (await availableBrowsers).find((InstalledBrowser) =>
+    const Browser = (await availableBrowsers(this.config)).find((InstalledBrowser) => // [CUSTOMIZED] Pass config to availableBrowsers
       this.chromeBrowsers.some(
         (ChromeBrowser) => InstalledBrowser === ChromeBrowser,
       ),
@@ -123,7 +123,7 @@ export class BrowserManager {
    */
   public async getVersionJSON(logger: Logger): Promise<CDPJSONPayload> {
     this.log.info(`Launching Chromium to generate /json/version results`);
-    const Browser = (await availableBrowsers).find((InstalledBrowser) =>
+    const Browser = (await availableBrowsers(this.config)).find((InstalledBrowser) => // [CUSTOMIZED] Pass config to availableBrowsers
       this.chromeBrowsers.some(
         (ChromeBrowser) => InstalledBrowser === ChromeBrowser,
       ),

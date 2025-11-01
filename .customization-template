@@ -1,0 +1,87 @@
+# Customization Code Template
+# Use this template when adding new custom modifications to browserless
+
+# For complete code blocks (recommended for major modifications):
+
+// ========== [CUSTOMIZED START] ==========
+// Purpose: [Brief description of what this modification does]
+// Date: [YYYY-MM-DD]
+// Modified by: [Your name or team name]
+// Related: [Related feature, issue number, or PR reference]
+// ========== [CUSTOMIZED] ==========
+
+[Your custom code goes here]
+
+// ========== [CUSTOMIZED END] ==========
+
+
+# For inline comments (recommended for simple one-line changes):
+
+someCode(); // [CUSTOMIZED] Brief explanation of the modification
+
+
+# Guidelines:
+
+1. Always add [CUSTOMIZED] markers to make code searchable
+2. Include a clear purpose/explanation
+3. Date the modification for tracking
+4. Update CUSTOMIZATIONS.md with details of the change
+5. Use complete blocks for multi-line modifications
+6. Use inline comments for single-line changes
+7. Keep explanations concise but informative
+
+# Examples:
+
+## Example 1: Adding a new configuration property
+
+// ========== [CUSTOMIZED START] ==========
+// Purpose: Add support for custom browser timeout configuration
+// Date: 2025-11-01
+// Modified by: Vincent
+// Related: Custom timeout feature
+// ========== [CUSTOMIZED] ==========
+protected customBrowserTimeout = process.env.CUSTOM_BROWSER_TIMEOUT
+  ? parseInt(process.env.CUSTOM_BROWSER_TIMEOUT, 10)
+  : 30000;
+
+public getCustomBrowserTimeout(): number {
+  return this.customBrowserTimeout;
+}
+// ========== [CUSTOMIZED END] ==========
+
+
+## Example 2: Modifying an existing function call
+
+const result = await someFunction(this.config); // [CUSTOMIZED] Pass config parameter for custom path support
+
+
+## Example 3: Adding conditional logic
+
+// ========== [CUSTOMIZED START] ==========
+// Purpose: Skip validation for custom browser configurations
+// Date: 2025-11-01
+// ========== [CUSTOMIZED] ==========
+if (config.getCustomChromiumPath()) {
+  this.logger.info('Using custom browser configuration, skipping validation');
+  return true;
+}
+// ========== [CUSTOMIZED END] ==========
+
+
+# Search commands:
+
+# Find all customizations:
+grep -rn "CUSTOMIZED" src/ .env.dev
+
+# Find complete blocks only:
+grep -A 3 "CUSTOMIZED START" src/
+
+# Count total customizations:
+grep -r "CUSTOMIZED" src/ .env.dev | wc -l
+
+
+# Remember:
+- Keep customizations minimal and well-documented
+- Always update CUSTOMIZATIONS.md when adding new modifications
+- Test thoroughly after making changes
+- Consider upstream compatibility when modifying core functionality

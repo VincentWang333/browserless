@@ -184,6 +184,14 @@ export class Config extends EventEmitter {
   protected errorAlertURL = process.env.ERROR_ALERT_URL ?? null;
   protected pwVersions: { [key: string]: string } = {};
   protected enableDebugger = !!parseEnvVars(true, 'ENABLE_DEBUGGER');
+  // ========== [CUSTOMIZED START] ==========
+  // Purpose: Store custom Chromium executable path from environment variable
+  // Date: 2025-11-01
+  // ========== [CUSTOMIZED] ==========
+  protected customChromiumPath = process.env.CUSTOM_CHROMIUM_PATH
+    ? untildify(process.env.CUSTOM_CHROMIUM_PATH)
+    : null;
+  // ========== [CUSTOMIZED END] ==========
 
   public getRoutes(): string {
     return this.routes;
@@ -486,6 +494,15 @@ export class Config extends EventEmitter {
     this.emit('allowFileProtocol', allow);
     return (this.allowFileProtocol = allow);
   }
+
+  // ========== [CUSTOMIZED START] ==========
+  // Purpose: Getter method for custom Chromium executable path
+  // Date: 2025-11-01
+  // ========== [CUSTOMIZED] ==========
+  public getCustomChromiumPath(): string | null {
+    return this.customChromiumPath;
+  }
+  // ========== [CUSTOMIZED END] ==========
 
   /**
    * Returns the fully-qualified server address, which

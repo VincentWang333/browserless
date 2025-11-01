@@ -505,39 +505,56 @@ export const isBase64Encoded = (item: string): boolean => isBase64.test(item);
 export const convertIfBase64 = (item: string): string =>
   isBase64Encoded(item) ? Buffer.from(item, 'base64').toString() : item;
 
-export const availableBrowsers = Promise.all([
-  exists(playwright.chromium.executablePath()),
-  exists(playwright.firefox.executablePath()),
-  exists(playwright.webkit.executablePath()),
-  exists(chromeExecutablePath()),
-  exists(edgeExecutablePath()),
-]).then(
-  ([chromiumExists, firefoxExists, webkitExists, chromeExists, edgeExists]) => {
-    const availableBrowsers = [];
+// ========== [CUSTOMIZED START] ==========
+// Purpose: Refactor availableBrowsers to accept Config and check custom Chromium path
+// Date: 2025-11-01
+// Changed from: Promise constant to function accepting Config parameter
+// ========== [CUSTOMIZED] ==========
+export const availableBrowsers = (config: Config) => {
+  // [CUSTOMIZED] Check custom chromium path if configured, otherwise use Playwright default
+  const customChromiumPath = config.getCustomChromiumPath();
+  const chromiumPathToCheck = customChromiumPath || playwright.chromium.executablePath();
 
-    if (chromiumExists) {
-      availableBrowsers.push(ChromiumCDP, ChromiumPlaywright);
-    }
+  return Promise.all([
+    exists(chromiumPathToCheck), // [CUSTOMIZED] Check custom or default path
+    exists(playwright.firefox.executablePath()),
+    exists(playwright.webkit.executablePath()),
+    exists(chromeExecutablePath()),
+    exists(edgeExecutablePath()),
+  ]).then(
+    ([chromiumExists, firefoxExists, webkitExists, chromeExists, edgeExists]) => {
+      const availableBrowsers = [];
 
-    if (chromeExists) {
-      availableBrowsers.push(ChromeCDP, ChromePlaywright);
-    }
+      if (chromiumExists) {
+        // [CUSTOMIZED] Only add ChromiumCDP when using Puppeteer, skip ChromiumPlaywright for now
+        availableBrowsers.push(ChromiumCDP);
+        // [CUSTOMIZED] Only add ChromiumPlaywright if we're using the default Playwright path
+        if (!customChromiumPath) {
+          availableBrowsers.push(ChromiumPlaywright);
+        }
+      }
 
-    if (firefoxExists) {
-      availableBrowsers.push(FirefoxPlaywright);
-    }
+      if (chromeExists) {
+        availableBrowsers.push(ChromeCDP, ChromePlaywright);
+      }
 
-    if (webkitExists) {
-      availableBrowsers.push(WebKitPlaywright);
-    }
+      if (firefoxExists) {
+        availableBrowsers.push(FirefoxPlaywright);
+      }
 
-    if (edgeExists) {
-      availableBrowsers.push(EdgeCDP, EdgePlaywright);
-    }
+      if (webkitExists) {
+        availableBrowsers.push(WebKitPlaywright);
+      }
 
-    return availableBrowsers;
-  },
-);
+      if (edgeExists) {
+        availableBrowsers.push(EdgeCDP, EdgePlaywright);
+      }
+
+      return availableBrowsers;
+    },
+  );
+};
+// ========== [CUSTOMIZED END] ==========
 
 export const queryParamsToObject = (
   params: URLSearchParams,

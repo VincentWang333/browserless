@@ -95,7 +95,7 @@ export default class MetaGetRoute extends HTTPRoute {
   path = HTTPManagementRoutes.meta;
   tags = [APITags.management];
   async handler(_req: Request, res: ServerResponse): Promise<void> {
-    const installedBrowsers = await availableBrowsers;
+    const installedBrowsers = await availableBrowsers(this._config); // [CUSTOMIZED] Pass config to availableBrowsers
     const response: ResponseSchema = {
       version: blessPackageJSON.version,
       chromium: installedBrowsers.includes(ChromiumCDP) ? chromium : null,

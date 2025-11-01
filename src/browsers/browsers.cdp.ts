@@ -53,6 +53,18 @@ export class ChromiumCDP extends EventEmitter {
     this.blockAds = blockAds;
     this.logger = logger;
 
+    // ========== [CUSTOMIZED START] ==========
+    // Purpose: Override executablePath with custom Chromium if configured
+    // Date: 2025-11-01
+    // ========== [CUSTOMIZED] ==========
+    // Use custom chromium path if configured, otherwise use default
+    const customPath = config.getCustomChromiumPath();
+    if (customPath) {
+      this.executablePath = customPath;
+      this.logger.info(`Using custom Chromium path: ${customPath}`);
+    }
+    // ========== [CUSTOMIZED END] ==========
+
     this.logger.info(`Starting new ${this.constructor.name} instance`);
   }
 
