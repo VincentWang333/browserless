@@ -29,3 +29,6 @@ coverage
 
 # Dev Files
 *.env*
+bot-profiles/android.json
+bot-profiles/mac.json
+bot-profiles/win.json

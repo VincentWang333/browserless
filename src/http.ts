@@ -195,4 +195,17 @@ export interface SystemQueryParameters {
    * Custom session identifier
    */
   trackingId?: string;
+
+  // ========== [CUSTOMIZED START] ==========
+  // Purpose: Add device type parameter support for bot profile configuration
+  // Date: 2025-11-04
+  /**
+   * Device type for bot profile configuration (mac/win/android).
+   * Default: 'mac'
+   *
+   * Note: --proxy-server parameter is also supported but not typed here
+   *       as it's handled as a generic query parameter
+   */
+  device_type?: string;
+  // ========== [CUSTOMIZED END] ==========
 }

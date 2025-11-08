@@ -39,6 +39,9 @@ import { Page } from 'puppeteer-core';
 import { deleteAsync } from 'del';
 import micromatch from 'micromatch';
 import path from 'path';
+import { readFile, writeFile } from 'fs/promises';
+import { randomUUID } from 'crypto';
+import { tmpdir } from 'os';
 
 export class BrowserManager {
   protected reconnectionPatterns = ['/devtools/browser', '/function/connect'];
@@ -559,6 +562,60 @@ export class BrowserManager {
         `--proxy-server=${proxyServerParam}`,
       ];
     }
+
+    // ========== [CUSTOMIZED START] ==========
+    // Purpose: Handle device_type and proxy parameters to generate bot-profile
+    // Date: 2025-11-04
+    // ========== [CUSTOMIZED] ==========
+    const deviceType = req.parsed.searchParams.get('device_type') || 'mac';
+
+    try {
+      // Read template file based on device_type
+      const botProfilesDir = this.config.getBotProfilesDir();
+      const templatePath = path.join(botProfilesDir, `${deviceType}.json`);
+
+      this.log.info(`Loading bot-profile template: ${templatePath}`);
+      const templateContent = await readFile(templatePath, 'utf-8');
+      const profileConfig = JSON.parse(templateContent);
+
+      // ========== [TODO: USER CUSTOM LOGIC] ==========
+      // Purpose: Add custom configuration logic for bot-profile
+      //
+      // You can modify profileConfig here based on your requirements:
+      // - Add device fingerprints
+      // - Configure extensions
+      // - Set custom preferences
+      // - Modify window size, language, etc.
+      //
+      // Note: Proxy configuration is handled separately via --proxy-server parameter
+      //       (see line 554-564), no need to inject it here.
+      //
+      // Example:
+      //   profileConfig.viewport = { width: 1920, height: 1080 };
+      //   profileConfig.language = 'en-US';
+      // ========== [END TODO] ==========
+
+      // Generate temporary profile file
+      const tempProfilePath = path.join(tmpdir(), `bot-profile-${randomUUID()}.json`);
+      await writeFile(tempProfilePath, JSON.stringify(profileConfig, null, 2), 'utf-8');
+
+      this.log.info(`Generated temporary bot-profile: ${tempProfilePath}`);
+
+      // Add --bot-profile argument
+      const existingArgs = launchOptions.args || [];
+      const filteredArgs = existingArgs.filter(
+        (arg) => !arg.includes('--bot-profile='),
+      );
+      launchOptions.args = [
+        ...filteredArgs,
+        `--bot-profile=${tempProfilePath}`,
+      ];
+    } catch (error) {
+      this.log.error(`Failed to process bot-profile: ${error}`);
+      throw new ServerError(`Failed to load bot-profile template for device: ${deviceType}`);
+    }
+    
+    // ========== [CUSTOMIZED END] ==========
 
     const manualUserDataDir =
       launchOptions.args

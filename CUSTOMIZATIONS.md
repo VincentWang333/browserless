@@ -102,6 +102,100 @@ CUSTOM_CHROMIUM_PATH=C:\Program Files\Chromium\Application\chrome.exe
 
 ---
 
+### 3. Device Type & Proxy 参数支持
+
+#### 目标
+支持从 Gateway 传递设备类型和代理配置参数，动态生成设备特定的浏览器配置文件，实现：
+1. 根据设备类型（mac/win/android）加载不同的配置模板
+2. 通过 `--proxy-server` 参数传递完整代理配置
+3. 为每个 session 生成独立的临时配置文件
+
+#### 修改文件
+
+##### 3.1 配置管理 (`src/config.ts`)
+- **位置 1**: 第 196-203 行 - `botProfilesDir` 属性定义
+- **位置 2**: 第 516-523 行 - `getBotProfilesDir()` getter 方法
+- **修改内容**:
+  - 添加 `botProfilesDir` 配置项，指向 bot-profiles 模板目录
+  - 默认路径: `path.join(__dirname, '..', 'bot-profiles')`
+  - 支持通过 `BOT_PROFILES_DIR` 环境变量自定义
+- **标记**: `[CUSTOMIZED START/END]`
+
+##### 3.2 浏览器启动参数处理 (`src/browsers/index.ts`)
+- **位置 1**: 第 42-44 行 - 导入依赖
+  - 添加 `readFile`, `writeFile`, `randomUUID`, `tmpdir` 等模块
+- **位置 2**: 第 570-603 行 - 参数处理和配置生成逻辑
+- **修改内容**:
+  - 从 URL 参数提取 `device_type`（默认 `mac`）
+  - 根据 device_type 读取对应的模板文件（`{device_type}.json`）
+  - 生成临时配置文件：`/tmp/bot-profile-{uuid}.json`
+  - 添加启动参数：`--bot-profile`
+  - **注意**：`--proxy-server` 参数由第 554-564 行的独立逻辑处理（格式：`username:password@server:port` 或 `http://username:password@server:port`）
+- **预留区域**: 第 581-584 行标注了 `[TODO: USER CUSTOM LOGIC]`，供用户添加自定义配置逻辑（如修改 profileConfig、添加扩展等）
+- **标记**: `[CUSTOMIZED START/END]`
+
+##### 3.3 配置模板文件（新增）
+- **位置**: `bot-profiles/` 目录
+- **文件**:
+  - `mac.json` - Mac 设备配置模板
+  - `win.json` - Windows 设备配置模板
+  - `android.json` - Android 设备配置模板
+- **内容**: JSON 格式的配置模板，用于设备特定的浏览器配置
+
+#### 工作流程
+
+```
+Gateway 传递参数
+  ↓ device_type=mac&--proxy-server=username:password@server:port
+Browserless 接收参数
+  ↓
+读取模板文件 (bot-profiles/mac.json)
+  ↓
+【可选】用户在 TODO 区域添加自定义配置逻辑
+  ↓
+生成临时文件 (/tmp/bot-profile-{uuid}.json)
+  ↓
+添加启动参数 (--bot-profile=... --proxy-server=...)
+  ↓
+启动 Chrome 浏览器
+```
+
+#### 并发安全
+- 每个 session 生成独立的 UUID 配置文件
+- 多用户可同时使用不同的代理配置
+- 避免配置文件冲突
+
+#### 自定义扩展点
+在 `src/browsers/index.ts:581-584` 提供了标注的 TODO 区域：
+```typescript
+// ========== [TODO: USER CUSTOM LOGIC] ==========
+// Purpose: Add custom configuration logic for bot-profile
+//
+// You can modify profileConfig here based on your requirements:
+// - Add device fingerprints
+// - Configure extensions
+// - Set custom preferences
+// - Modify window size, language, etc.
+//
+// Note: Proxy configuration is handled separately via --proxy-server parameter
+//       (see line 554-564), no need to inject it here.
+//
+// Example:
+//   profileConfig.viewport = { width: 1920, height: 1080 };
+//   profileConfig.language = 'en-US';
+// ========== [END TODO] ==========
+```
+
+用户可以在此添加：
+- 自定义配置文件字段修改
+- 设备特定的浏览器指纹配置
+- 扩展程序加载逻辑
+- 其他浏览器启动参数
+
+**重要**：代理配置通过 `--proxy-server` 参数传递（格式：`username:password@server:port` 或 `http://username:password@server:port`），无需在配置文件中注入。
+
+---
+
 ### 2. 错误处理策略改进
 
 #### 目标
@@ -316,6 +410,7 @@ grep -A 3 "CUSTOMIZED START" src/
 | 2025-11-01 | 2.38.1 | 初始化自定义 Chromium 路径支持 | Vincent | 支持自编译 Chromium,添加环境变量配置 |
 | 2025-11-01 | 2.38.1 | 错误处理策略改进 | Vincent | 浏览器缺失降级为警告,提高服务可用性 |
 | 2025-11-01 | 2.38.1 | 添加 CUSTOMIZATIONS.md 文档 | Vincent | 建立自定义修改追踪机制 |
+| 2025-11-04 | 2.38.1 | Device Type & Proxy 参数支持 | Vincent | 支持动态设备配置和代理注入，预留用户自定义逻辑空间 |
 
 ---
 
@@ -359,6 +454,6 @@ git diff upstream/main > custom-changes.patch
 
 ---
 
-**最后更新**: 2025-11-01
-**文档版本**: 1.0.0
+**最后更新**: 2025-11-04
+**文档版本**: 1.1.0
 **维护者**: Vincent Wang

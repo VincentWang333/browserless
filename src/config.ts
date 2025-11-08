@@ -193,6 +193,15 @@ export class Config extends EventEmitter {
     : null;
   // ========== [CUSTOMIZED END] ==========
 
+  // ========== [CUSTOMIZED START] ==========
+  // Purpose: Store bot-profiles directory path for device-specific configurations
+  // Date: 2025-11-04
+  // ========== [CUSTOMIZED] ==========
+  protected botProfilesDir = process.env.BOT_PROFILES_DIR
+    ? untildify(process.env.BOT_PROFILES_DIR)
+    : path.join(__dirname, '..', 'bot-profiles');
+  // ========== [CUSTOMIZED END] ==========
+
   public getRoutes(): string {
     return this.routes;
   }
@@ -501,6 +510,15 @@ export class Config extends EventEmitter {
   // ========== [CUSTOMIZED] ==========
   public getCustomChromiumPath(): string | null {
     return this.customChromiumPath;
+  }
+  // ========== [CUSTOMIZED END] ==========
+
+  // ========== [CUSTOMIZED START] ==========
+  // Purpose: Get bot-profiles directory path
+  // Date: 2025-11-04
+  // ========== [CUSTOMIZED] ==========
+  public getBotProfilesDir(): string {
+    return this.botProfilesDir;
   }
   // ========== [CUSTOMIZED END] ==========
 
