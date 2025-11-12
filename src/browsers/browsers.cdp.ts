@@ -226,16 +226,28 @@ export class ChromiumCDP extends EventEmitter {
       }
     }
 
+    // ========== [CUSTOMIZED START] ==========
+    // Purpose: Add custom Chromium launch arguments for bot profile support
+    // Date: 2025-11-11
+    // ========== [CUSTOMIZED] ==========
     const finalOptions = {
+      ignoreDefaultArgs: true,
       ...options,
       args: [
+        "--disable-audio-output",
+        "--no-first-run",
+        "--disable-gpu",
+        "--headless",
+        "--password-store=basic",
         `--remote-debugging-port=${this.port}`,
         `--no-sandbox`,
+        "--bot-internal",
         ...(options.args || []),
         this.userDataDir ? `--user-data-dir=${this.userDataDir}` : '',
       ].filter((_) => !!_),
       executablePath: this.executablePath,
     };
+    // ========== [CUSTOMIZED END] ==========
 
     if (extensions.length) {
       finalOptions.args.push(
